@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>微信公众平台接入初探 | Willen&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="最近出于兴趣，弄了个微信公众号玩玩，自从审核通过后就开始琢磨如何接入平台。趁着还记得，说说如何接入公众平台，并用Nginx+Flask搭建一个简单的用于自动回复消息的服务器后台。">
+<meta name="keywords" content="Python,Linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微信公众平台接入初探">
+<meta property="og:url" content="http://willenzh.github.io/2015/01/26/nginx-flask/index.html">
+<meta property="og:site_name" content="Willen&#39;s Blog">
+<meta property="og:description" content="最近出于兴趣，弄了个微信公众号玩玩，自从审核通过后就开始琢磨如何接入平台。趁着还记得，说说如何接入公众平台，并用Nginx+Flask搭建一个简单的用于自动回复消息的服务器后台。">
+<meta property="og:image" content="http://mp.weixin.qq.com/wiki/static/assets/ce21f9e7d08b0f553032261b23c43b77.png">
+<meta property="og:image" content="http://jayveestorage.qiniudn.com/图片外链搜狗截图15年01月27日0339_1.png">
+<meta property="og:image" content="http://jayveestorage.qiniudn.com/图片外链QQ截图20150127133941.png">
+<meta property="og:updated_time" content="2017-11-27T12:06:17.264Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="微信公众平台接入初探">
+<meta name="twitter:description" content="最近出于兴趣，弄了个微信公众号玩玩，自从审核通过后就开始琢磨如何接入平台。趁着还记得，说说如何接入公众平台，并用Nginx+Flask搭建一个简单的用于自动回复消息的服务器后台。">
+<meta name="twitter:image" content="http://mp.weixin.qq.com/wiki/static/assets/ce21f9e7d08b0f553032261b23c43b77.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Willen&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/willen_avatar.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">Willen Zhang</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">以梦为马不负韶华</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/about">关于</a></li>
+				        
+							<li><a href="/about/resume.html">个人简历</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/Willenzh" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/1692530220" title="weibo">weibo</a>
+					        
+								<a class="zhihu" target="_blank" href="https://www.zhihu.com/people/jayveehe" title="zhihu">zhihu</a>
+					        
+								<a class="facebook" target="_blank" href="https://www.facebook.com/jayveehe" title="facebook">facebook</a>
+					        
+								<a class="twitter" target="_blank" href="https://twitter.com/JayveeHe" title="twitter">twitter</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/ACG/" style="font-size: 13.33px;">ACG</a> <a href="/tags/CS相关/" style="font-size: 20px;">CS相关</a> <a href="/tags/CV/" style="font-size: 13.33px;">CV</a> <a href="/tags/ELK-stack/" style="font-size: 10px;">ELK stack</a> <a href="/tags/Javascript/" style="font-size: 10px;">Javascript</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/Math/" style="font-size: 10px;">Math</a> <a href="/tags/NLP/" style="font-size: 13.33px;">NLP</a> <a href="/tags/Python/" style="font-size: 16.67px;">Python</a> <a href="/tags/chrome/" style="font-size: 10px;">chrome</a> <a href="/tags/前端/" style="font-size: 10px;">前端</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a> <a href="/tags/新奇脑洞/" style="font-size: 10px;">新奇脑洞</a> <a href="/tags/日志分析/" style="font-size: 10px;">日志分析</a> <a href="/tags/最优化/" style="font-size: 10px;">最优化</a> <a href="/tags/杂感/" style="font-size: 13.33px;">杂感</a> <a href="/tags/生活/" style="font-size: 13.33px;">生活</a> <a href="/tags/脑洞/" style="font-size: 10px;">脑洞</a> <a href="/tags/阅读/" style="font-size: 10px;">阅读</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://wangzi6147.github.io">wangzi的博客</a>
+			        
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://lujiaying.github.io">lujiaying的博客</a>
+			        
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://ankailiang.github.io">liang&#39;ankai的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">我是谁，我从哪里来，我到哪里去？我就是我，是颜色不一样的吃货…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">Willen Zhang</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/willen_avatar.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">Willen Zhang</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">以梦为马不负韶华</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/about">关于</a></li>
+		        
+					<li><a href="/about/resume.html">个人简历</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/Willenzh" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/1692530220" title="weibo">weibo</a>
+			        
+						<a class="zhihu" target="_blank" href="https://www.zhihu.com/people/jayveehe" title="zhihu">zhihu</a>
+			        
+						<a class="facebook" target="_blank" href="https://www.facebook.com/jayveehe" title="facebook">facebook</a>
+			        
+						<a class="twitter" target="_blank" href="https://twitter.com/JayveeHe" title="twitter">twitter</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-nginx-flask" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/01/26/nginx-flask/" class="article-date">
+  	<time datetime="2015-01-26T09:50:00.000Z" itemprop="datePublished">Jan 26 2015</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      微信公众平台接入初探
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li></ul>
+	</div>
+
+        
+	<div class="article-category tagcloud">
+	<a class="article-category-link" href="/categories/技术相关/">技术相关</a>
+	</div>
+
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近出于兴趣，弄了个微信公众号玩玩，自从审核通过后就开始琢磨如何接入平台。趁着还记得，说说如何接入公众平台，并用<a href="http://nginx.org/" target="_blank" rel="noopener">Nginx</a>+<a href="http://flask.pocoo.org/" target="_blank" rel="noopener">Flask</a>搭建一个简单的用于自动回复消息的服务器后台。<br><a id="more"></a><br>推荐阅读：<a href="http://www.oschina.net/translate/serving-flask-with-nginx-on-ubuntu?cmp" target="_blank" rel="noopener">在Ubuntu上使用Nginx部署Flask应用</a></p>
+<h2 id="微信公众平台上的设置"><a href="#微信公众平台上的设置" class="headerlink" title="微信公众平台上的设置"></a>微信公众平台上的设置</h2><p>首先是需要有一个公众平台的账号，到<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">微信公众平台</a>注册一个，提交身份信息后等待审核，只有审核通过以后才能进入开发者中心。</p>
+<p>审核通过后，进入开发者中心，要求进行服务器验证。如下图：<br><img src="http://mp.weixin.qq.com/wiki/static/assets/ce21f9e7d08b0f553032261b23c43b77.png" alt=""><br>其中，URL填写自己服务器的地址，Token为自己自定义的一个字符串，如果下方“消息加解密方式”选择了包含密文的选项（第二第三个），那么EncodingAESKey则需要填入一个自定义的加密密钥。<br>填好后，如果服务端也准备完毕，点击提交则微信方的服务器就会向所填URL发起验证用GET请求。</p>
+<h2 id="服务端需要做的事"><a href="#服务端需要做的事" class="headerlink" title="服务端需要做的事"></a>服务端需要做的事</h2><p>简单来说服务器验证的过程是这样的：微信的服务器会向你预留的URL发送一个GET请求，其中包含了时间戳(<code>timestamp</code>)、随机数(<code>nonce</code>)、一个随机字符串(<code>echostr</code>)以及一个根据时间戳、随机数还有你自定义的token加密而成的签名字符串(<code>signature</code>)。<br>你所要做的就是根据自己定义的token+收到的时间戳+收到的随机数进行sha1加密，然后与发来的签名字符串进行对比，如果一样的话就说明该条信息是来自于微信服务器的，此时在response中原样返回收到的那个随机字符串echostr即可。<br>如果不考虑安全性且嫌麻烦的话，应该可以无视加密验证过程，直接返回echostr即可完成服务器验证工作。<br>具体的接入文档可以看<a href="http://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html#" target="_blank" rel="noopener">微信官方的文档</a></p>
+<h2 id="搭建简易的消息服务器"><a href="#搭建简易的消息服务器" class="headerlink" title="搭建简易的消息服务器"></a>搭建简易的消息服务器</h2><p>使用阿里云VPS作为我们的服务器，由于不想再写Java的servlet之类的东西了，出于简捷和学习的目的，我选择python的flask框架进行消息的响应，同时为了更好的利用宝贵的80端口，采用Nginx进行反向代理。Flask和Nginx的基本安装及基础配置可以很容易的搜到，下面我说说在实践中遇到的问题和解决的关键。</p>
+<ul>
+<li><strong>服务器验证的响应程序</strong><br>稍微改写一下flask的helloworld程序即可完成验证工作:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#encoding:utf8</span></span><br><span class="line">__author__ = <span class="string">'Jayvee'</span></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, request, make_response</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> MsgParser</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route('/')</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hello_world</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">'Hello World!'</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route('/weixin', methods=['GET', 'POST'])</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">weixin</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">if</span> request.method == <span class="string">'GET'</span>:</span><br><span class="line">        <span class="keyword">if</span> len(request.args) &gt; <span class="number">3</span>:</span><br><span class="line">            temparr = []</span><br><span class="line">            token = <span class="string">"你的token"</span></span><br><span class="line">            signature = request.args[<span class="string">"signature"</span>]</span><br><span class="line">            timestamp = request.args[<span class="string">"timestamp"</span>]</span><br><span class="line">            nonce = request.args[<span class="string">"nonce"</span>]</span><br><span class="line">            echostr = request.args[<span class="string">"echostr"</span>]</span><br><span class="line">            temparr.append(token)</span><br><span class="line">            temparr.append(timestamp)</span><br><span class="line">            temparr.append(nonce)</span><br><span class="line">            temparr.sort()</span><br><span class="line">            newstr = <span class="string">""</span>.join(temparr)</span><br><span class="line">            sha1str = hashlib.sha1(newstr)</span><br><span class="line">            temp = sha1str.hexdigest()</span><br><span class="line">            <span class="keyword">if</span> signature == temp:</span><br><span class="line">                <span class="keyword">return</span> echostr</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"认证失败，不是微信服务器的请求！"</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="string">"你请求的方法是："</span> + request.method</span><br><span class="line">    <span class="keyword">else</span>:  <span class="comment"># POST</span></span><br><span class="line">        <span class="keyword">print</span> <span class="string">"POST"</span></span><br><span class="line">        xmldict = MsgParser.recv_msg(request.data)</span><br><span class="line">        reply = MsgParser.submit_msg(xmldict)</span><br><span class="line">        response = make_response(reply)</span><br><span class="line">        response.content_type = <span class="string">'application/xml'</span></span><br><span class="line">        <span class="keyword">return</span> response</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    app.run(host=<span class="string">'0.0.0.0'</span>, port=<span class="number">9527</span>,debug=<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+<p>其中，验证部分只在GET方法中进行，上述代码中的POST方法部分是后面进行消息响应的相关代码。又假设我们将代码保存为weixin.py，那么在服务器中使用<code>python weixin.py</code>就能启动服务器，此时访问<code>http://服务器外网IP:9527/weixin</code> 就会得到 “你请求的方法是：GET” 的返回。<br>但是这样没有用到80端口，是无法在微信公众平台上验证通过的。同时，我们的服务器上也有其他程序需要用到80的端口，而又不希望weixin.py独占，那么我们就需要Nginx进行反向代理。</p>
+<ul>
+<li><strong>Nginx的反向代理设置</strong><br>Nginx的方向代理可以将外网请求的某些URL路径转发到内网中的某个服务器上，假设我们服务器的IP为127.0.0.1，那么现在的需求就是当我们在访问<code>http://127.0.0.1/weixin</code>时,实际访问的是<code>http://127.0.0.1:9527/weixin</code>。Nginx环境的搭建此处不再赘述，那么如何将请求转发到9527端口的/weixin下呢？<br>在<code>etc/nginx</code>下编辑<code>nginx.conf</code>文件，修改默认的配置文件。于http项内增加一个server</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">	listen 80;</span><br><span class="line">	server_name 127.0.0.1;</span><br><span class="line">	location /weixin &#123;</span><br><span class="line">		proxy_pass http://127.0.0.1:9527;   </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>意思是将所有80端口下对/weixin地址进行访问时（即<a href="http://127.0.0.1/weixin）" target="_blank" rel="noopener">http://127.0.0.1/weixin）</a> 时，将会转到<a href="http://127.0.0.1:9527/weixin" target="_blank" rel="noopener">http://127.0.0.1:9527/weixin</a><br>保存退出后，cd到/usr/sbin目录下使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nginx -s reload</span><br></pre></td></tr></table></figure>
+<p>进行Nginx服务器的重新启动，之后应该可以验证成功了。</p>
+<ul>
+<li><strong>简易的消息回复程序</strong><br>通过审核而又未进行认证的公众账号所能使用的接口十分有限，其中比较常用的有消息收发接口，它们的调用权限与频次如图：<br><img src="http://jayveestorage.qiniudn.com/图片外链搜狗截图15年01月27日0339_1.png" alt="未认证接口"></li>
+</ul>
+<p>下面简单说说如何实现接收用户发来的消息并进行回复的功能：<br><strong>1. 解析用户发送的消息</strong><br>接收普通消息的接口，官方文档也有<a href="http://mp.weixin.qq.com/wiki/10/79502792eef98d6e0c6e1739da387346.html" target="_blank" rel="noopener">详细介绍</a>，大致的过程是：每当用户向公众号发送消息，微信服务器就将这个消息编成一个xml文本，通过POST方法提交到之前我们预留的URL上，我们要做的就是解析这个xml文本并作出相应的回复。需要注意的是，<strong>这个xml文本是在request.data里面而不是在表单里</strong>。一个普通的文本消息xml格式如下：  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;xml&gt;</span><br><span class="line">&lt;ToUserName&gt;&lt;![CDATA[toUser]]&gt;&lt;/ToUserName&gt;</span><br><span class="line">&lt;FromUserName&gt;&lt;![CDATA[fromUser]]&gt;&lt;/FromUserName&gt; </span><br><span class="line">&lt;CreateTime&gt;1348831860&lt;/CreateTime&gt;</span><br><span class="line">&lt;MsgType&gt;&lt;![CDATA[text]]&gt;&lt;/MsgType&gt;</span><br><span class="line">&lt;Content&gt;&lt;![CDATA[this is a test]]&gt;&lt;/Content&gt;</span><br><span class="line">&lt;MsgId&gt;1234567890123456&lt;/MsgId&gt;</span><br><span class="line">&lt;/xml&gt;</span><br></pre></td></tr></table></figure>
+<p><img src="http://jayveestorage.qiniudn.com/图片外链QQ截图20150127133941.png" alt=""><br>在接收消息时其实也可以做消息来源验证，大概的流程和上面的服务器验证一样。<br>一切从简的话，只需提取<code>ToUserName</code>、<code>FromUserName</code>、<code>Content</code>这三个内容（其他的参数可以在后期深入扩展时利用，在此不再赘述），针对Content的内容进行相应的操作。<br><strong>2. 向用户发送回复消息</strong><br>在上一节中，接收到消息后如果5秒内做出响应，就会自动回复给相应的用户，我们需要做的就是编制一条相同格式的xml文本返回给微信服务器。如果只做简单的回复，就只调换<code>ToUserName</code>、<code>FromUserName</code>两者的位置，并添加相应的<code>Content</code>即可。<br>详细的说明也可以看官方文档-<a href="http://mp.weixin.qq.com/wiki/14/89b871b5466b19b3efa4ada8e577d45e.html" target="_blank" rel="noopener">被动回复用户消息</a><br><strong>3. 相关的python代码</strong><br>在上文中的服务器验证代码中，出现了POST方法的响应分支，里面的<code>MsgParser</code>是我自定义的一个文件。<br>python中解析xml文本的方法很多，这里我使用xml.etree.ElementTree提供的方法进行操作，相关代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line">__author__ = <span class="string">'Jayvee'</span></span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> xml.etree.ElementTree <span class="keyword">as</span> ET</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">reload(sys)</span><br><span class="line">sys.setdefaultencoding(<span class="string">'utf8'</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">recv_msg</span><span class="params">(oriData)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    获取从微信服务器post而来的消息</span></span><br><span class="line"><span class="string">    :param oriData: post的data</span></span><br><span class="line"><span class="string">    :return:返回一个包含发送者、接收者、消息内容的字典</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    xmldata = ET.fromstring(oriData)</span><br><span class="line">    <span class="comment"># 获取发送方的ID</span></span><br><span class="line">    fromusername = xmldata.find(<span class="string">"FromUserName"</span>).text</span><br><span class="line">    <span class="comment"># 接收方的ID</span></span><br><span class="line">    tousername = xmldata.find(<span class="string">"ToUserName"</span>).text</span><br><span class="line">    <span class="comment"># 消息的内容</span></span><br><span class="line">    content = xmldata.find(<span class="string">"Content"</span>).text</span><br><span class="line">    xmldict = &#123;<span class="string">"FromUserName"</span>: fromusername,<span class="string">"ToUserName"</span>: tousername, <span class="string">"Content"</span>: content&#125;</span><br><span class="line">    <span class="keyword">return</span> xmldict</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">submit_msg</span><span class="params">(content_dict=&#123;<span class="string">""</span>: <span class="string">""</span>&#125;, type=<span class="string">"text"</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    编制回复信息</span></span><br><span class="line"><span class="string">    :param content_dict:</span></span><br><span class="line"><span class="string">    :param type:</span></span><br><span class="line"><span class="string">    :return:</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    toname = content_dict[<span class="string">"FromUserName"</span>]</span><br><span class="line">    fromname = content_dict[<span class="string">"ToUserName"</span>]</span><br><span class="line">    content = content_dict[<span class="string">"Content"</span>]</span><br><span class="line">    content = <span class="string">"对啊，%s，然后呢"</span> % (content)</span><br><span class="line">    reply = <span class="string">"""</span></span><br><span class="line"><span class="string">    &lt;xml&gt;</span></span><br><span class="line"><span class="string">        &lt;ToUserName&gt;&lt;![CDATA[%s]]&gt;&lt;/ToUserName&gt;</span></span><br><span class="line"><span class="string">        &lt;FromUserName&gt;&lt;![CDATA[%s]]&gt;&lt;/FromUserName&gt;</span></span><br><span class="line"><span class="string">        &lt;CreateTime&gt;%s&lt;/CreateTime&gt;</span></span><br><span class="line"><span class="string">        &lt;MsgType&gt;&lt;![CDATA[text]]&gt;&lt;/MsgType&gt;</span></span><br><span class="line"><span class="string">        &lt;Content&gt;&lt;![CDATA[%s]]&gt;&lt;/Content&gt;</span></span><br><span class="line"><span class="string">        &lt;FuncFlag&gt;0&lt;/FuncFlag&gt;</span></span><br><span class="line"><span class="string">    &lt;/xml&gt;</span></span><br><span class="line"><span class="string">	"""</span></span><br><span class="line">    resp_str = reply % (toname, fromname, int(time.time()), content)</span><br><span class="line">    <span class="keyword">return</span> resp_str</span><br></pre></td></tr></table></figure>
+<p>一切从简就没有进行异常处理之类的操作，目前为止就成功设置了一个简易的消息自动回复后台。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文中介绍了如何最简化地接入微信公众平台，由于是<strong>初探</strong>，所以没有做太多的深入工作。Nginx和flask的其他特性也没有使用，一般来说也推荐使用<strong>Nginx+flask+uWSGI</strong>的组合进行服务端的搭建。<br>目前只是实现了一个高冷的聊天机器人功能（如果这个也算聊天机器人的话。。。）相关的应用就要各位展开想象了。<br>本文到此为止，谢谢观看！</p>
+<p><em>转载注明<a href="http://jayveehe.github.io/2015/01/26/nginx-flask/" target="_blank" rel="noopener">Jayvee’s Blog</a></em></p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/12/26/shooooty-md/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          Shooooty——在你想到的任何网站玩弹幕
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/01/04/ipv6/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">IPV6下利用GoAgent回避校园网收费</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+     
+    <div class="article-nav-link-wrap" align="right">
+          <span id="busuanzi_container_page_pv" style='display:none'>
+              本篇阅读量<span id="busuanzi_value_page_pv"></span>次
+          </span>
+    </div>
+
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+
+<div class="container">
+    <!-- <script src="https://rawgit.com/Namitor/Loquor/dev/plugin/source/loquor.js"></script> -->
+    <script src="http://jayveestorage.qiniudn.com/public/js/loquor.js"></script>
+
+	<!-- Loquor评论框 start -->
+	<div id="loquor_container" data-loquor-id="jayvee_loquor" data-loquor-page-id="jayvee_loquor_nginx-flask" data-loquor-pagetitle="微信公众平台接入初探" data-loquor-pageurl="http://willenzh.github.io/2015/01/26/nginx-flask/" style="width: 95%; margin: 0 auto">
+</div>
+	<!-- Loquor评论框 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2017 Willen Zhang
+    	</div>
+      <div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      </div>
+      <div>
+          <span id="busuanzi_container_site_pv">
+              本站总访问量<span id="busuanzi_value_site_pv"></span>次
+          </span>
+          <span id="busuanzi_container_site_uv">
+            本站访客数<span id="busuanzi_value_site_uv"></span>人次
+          </span>
+      </div>
+      <div>
+        <span>
+          <a href="http://www.miitbeian.gov.cn">京ICP备904559423</a>
+        </span>
+      </div>
+    </div>
+  </div>
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>
+<script>
+	var _hmt = _hmt || [];
+	(function() {
+	  var hm = document.createElement("script");
+	  hm.src = "//hm.baidu.com/hm.js?c7d89ed67901d02cba33dda8213119e1";
+	  var s = document.getElementsByTagName("script")[0];
+	  s.parentNode.insertBefore(hm, s);
+	})();
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-41257143-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+</footer>
+
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script src="/js/main.js"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>
